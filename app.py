@@ -4,7 +4,7 @@ from io import BytesIO
 from pathlib import Path
 import zipfile
 
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
@@ -326,14 +326,14 @@ def api_info():
 
 
 @app.get("/robots.txt", response_class=Response)
-def robots(request):
+def robots(request: Request):
     origin = str(request.base_url).rstrip("/")
     body = f"User-agent: *\\nAllow: /\\nDisallow: /api/\\nSitemap: {origin}/sitemap.xml\\n"
     return Response(body, media_type="text/plain; charset=utf-8")
 
 
 @app.get("/sitemap.xml", response_class=Response)
-def sitemap(request):
+def sitemap(request: Request):
     return Response(sitemap_xml(str(request.base_url)), media_type="application/xml; charset=utf-8")
 
 
@@ -343,17 +343,17 @@ if DIST.exists():
         app.mount("/assets", StaticFiles(directory=assets), name="assets")
 
     @app.get("/tools/{slug}", response_class=HTMLResponse)
-    def tool_page(slug: str, request):
+    def tool_page(slug: str, request: Request):
         if slug not in TOOLS:
             return HTMLResponse("Tool not found", status_code=404)
         return HTMLResponse(render_index(DIST / "index.html", str(request.base_url), slug))
 
     @app.get("/", response_class=HTMLResponse)
-    def home_page(request):
+    def home_page(request: Request):
         return HTMLResponse(render_index(DIST / "index.html", str(request.base_url)))
 
     @app.get("/{path:path}", response_class=HTMLResponse)
-    def spa_fallback(path: str, request):
+    def spa_fallback(path: str, request: Request):
         return HTMLResponse(render_index(DIST / "index.html", str(request.base_url)))
 else:
     @app.get("/")
