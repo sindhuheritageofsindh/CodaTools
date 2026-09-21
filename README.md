@@ -144,3 +144,38 @@ python -m pytest tests/test_backend.py
 - Passport Photo Maker creates dimensions/layout only; official photo requirements vary by country.
 - JWT Decoder decodes header/payload but does not verify signatures.
 - OCR runs in the browser and may download OCR model assets on first use.
+
+
+## SEO & UX architecture
+
+CodaTools now gives every utility a dedicated crawlable route:
+
+```text
+/tools/metadata-remover
+/tools/background-remover
+/tools/merge-pdf
+/tools/json-formatter
+...
+```
+
+Each tool has its own:
+- SEO title and meta description
+- canonical URL
+- Open Graph / Twitter metadata
+- JSON-LD SoftwareApplication data
+- sitemap entry
+- category-specific icon
+- indexable tool description and related-tool links
+
+Technical SEO endpoints:
+
+```text
+/robots.txt
+/sitemap.xml
+```
+
+The FastAPI production server injects tool-specific SEO metadata into the built Vite HTML so direct visits and crawlers receive useful metadata without relying only on client-side JavaScript.
+
+### UI
+
+The interface uses responsive light/dark claymorphism with category-specific image, PDF, QR, text, and developer iconography. Desktop, tablet, and mobile layouts are covered, including a keyboard search palette (Ctrl/Cmd + K), contextual upload icons, responsive workspaces, and lightweight privacy notifications.
