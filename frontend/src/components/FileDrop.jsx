@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Upload } from 'lucide-react'
+import { FileText, Image as ImageIcon, Upload } from 'lucide-react'
 
 export default function FileDrop({ accept, multiple = false, label = 'Drop files here', onFiles }) {
   const inputRef = useRef(null)
@@ -9,6 +9,10 @@ export default function FileDrop({ accept, multiple = false, label = 'Drop files
     const list = Array.from(files || [])
     if (list.length) onFiles(list)
   }
+
+  const isPdf = /pdf/i.test(accept || '')
+  const isImage = /image|heic|heif/i.test(accept || '')
+  const DropIcon = isPdf ? FileText : isImage ? ImageIcon : Upload
 
   return (
     <button
@@ -28,9 +32,9 @@ export default function FileDrop({ accept, multiple = false, label = 'Drop files
         multiple={multiple}
         onChange={(e) => handle(e.target.files)}
       />
-      <span className="drop-icon"><Upload size={20} /></span>
+      <span className="drop-icon"><DropIcon size={21} strokeWidth={1.8} /></span>
       <strong>{label}</strong>
-      <span>or click to choose</span>
+      <span>{multiple ? 'or click to choose files' : 'or click to choose a file'}</span>
     </button>
   )
 }
