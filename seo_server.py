@@ -12,7 +12,7 @@ TOOLS = {
     "image-cropper": ("Crop Image", "Crop images online using precise pixel coordinates and dimensions with CodaTools."),
     "rotate-flip-image": ("Rotate / Flip Image", "Rotate and flip images online by 90, 180 or 270 degrees with CodaTools."),
     "metadata-remover": ("Metadata Remover", "Remove EXIF, GPS location, camera details and other embedded metadata from images online."),
-    "exif-viewer": ("EXIF Viewer", "View EXIF metadata, camera settings, timestamps and GPS information embedded in photos."),
+    "metadata-checker": ("Metadata Checker", "Check image metadata and view EXIF, GPS coordinates, camera model, lens, date taken, exposure settings, creator details and every detected metadata field."),
     "heic-to-jpg": ("HEIC to JPG", "Convert iPhone HEIC and HEIF photos to JPG online with adjustable image quality."),
     "image-to-text": ("Image to Text", "Extract editable text from images, screenshots and photos online using OCR."),
     "watermark-image": ("Watermark Image", "Add customizable text watermarks to JPG and PNG images online."),
