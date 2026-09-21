@@ -5,7 +5,7 @@ from pathlib import Path
 import zipfile
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 import pypdfium2 as pdfium
@@ -344,6 +344,8 @@ if DIST.exists():
 
     @app.get("/tools/{slug}", response_class=HTMLResponse)
     def tool_page(slug: str, request: Request):
+        if slug == "exif-viewer":
+            return RedirectResponse(url="/tools/metadata-checker", status_code=308)
         if slug not in TOOLS:
             return HTMLResponse("Tool not found", status_code=404)
         return HTMLResponse(render_index(DIST / "index.html", str(request.base_url), slug))
