@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Command, Moon, Search, ShieldCheck, Sparkles, Sun, X } from 'lucide-react'
+import { ArrowLeft, Moon, Search, ShieldCheck, Sparkles, Sun, X } from 'lucide-react'
 import { categories, tools } from './data'
 import ToolIcon from './components/ToolIcon'
 import Toast from './components/Toast'
@@ -68,7 +68,7 @@ function SearchPalette({ open, onClose }) {
 
 function HomePage({ setToast }) {
   const [category, setCategory] = useState('All')
-  const [query, setQuery] = useState(() => new URLSearchParams(location.search).get('q') || '')
+  const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') || '')
   const filtered = useMemo(() => tools.filter((tool) => {
     const categoryOk = category === 'All' || tool.category === category
     return categoryOk && `${tool.name} ${tool.desc} ${tool.keywords}`.toLowerCase().includes(query.trim().toLowerCase())
@@ -154,7 +154,7 @@ export default function App() {
   }, [theme])
 
   useEffect(() => {
-    const sync = () => { const tool = findToolFromLocation(); setRouteTool(tool); setSeo(tool); window.scrollTo({ top: 0, behavior: 'instant' }) }
+    const sync = () => { const tool = findToolFromLocation(); setRouteTool(tool); setSeo(tool); window.scrollTo({ top: 0, behavior: 'auto' }) }
     sync()
     window.addEventListener('popstate', sync)
     return () => window.removeEventListener('popstate', sync)
