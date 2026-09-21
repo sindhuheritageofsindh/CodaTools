@@ -51,11 +51,11 @@ export const tools = [
     keywords: 'metadata remover, remove metadata, exif remover, remove exif data, remove gps from photo, image metadata remover'
   },
   {
-    id: 'exif-viewer', slug: 'exif-viewer', name: 'EXIF Viewer', category: 'Image', icon: 'Info',
-    desc: 'Inspect camera settings, GPS information and image metadata.',
-    seoTitle: 'EXIF Viewer Online — View Image Metadata & GPS | CodaTools',
-    seoDescription: 'View EXIF metadata, camera settings, timestamps and GPS information embedded in photos directly in your browser.',
-    keywords: 'exif viewer, image metadata viewer, photo metadata, view exif online, gps photo metadata'
+    id: 'metadata-checker', slug: 'metadata-checker', name: 'Metadata Checker', category: 'Image', icon: 'FileSearch2',
+    desc: 'Inspect EXIF, GPS, camera, capture, creator and image metadata in one detailed report.',
+    seoTitle: 'Image Metadata Checker — View EXIF, GPS & Camera Details | CodaTools',
+    seoDescription: 'Check image metadata online and view EXIF, GPS coordinates, camera model, lens, date taken, exposure settings, software and every detected metadata field.',
+    keywords: 'metadata checker, image metadata checker, exif checker, exif viewer, photo metadata, gps metadata, camera metadata, check image metadata'
   },
   {
     id: 'heic-jpg', slug: 'heic-to-jpg', name: 'HEIC to JPG', category: 'Image', icon: 'Images',
