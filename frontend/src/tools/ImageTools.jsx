@@ -83,16 +83,176 @@ export function RotateImageTool() {
   return <div className="tool-body"><FileDrop accept="image/*" label="Drop image to rotate or flip" onFiles={(f)=>isImage(f[0])&&(setFile(f[0]),setResult(null))}/><div className="control-grid"><label>Rotation<select value={angle} onChange={(e)=>setAngle(+e.target.value)}><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label className="check"><input type="checkbox" checked={flipX} onChange={(e)=>setFlipX(e.target.checked)}/> Flip horizontal</label><label className="check"><input type="checkbox" checked={flipY} onChange={(e)=>setFlipY(e.target.checked)}/> Flip vertical</label></div>{file&&<OutputPreview file={file} result={result}/>}<Actions primary="Apply" onPrimary={run} disabled={!file} secondary="Download PNG" onSecondary={()=>result&&downloadBlob(result,`${stem(file.name)}-rotated.png`)} secondaryDisabled={!result}/></div>
 }
 
-export function MetadataRemoveTool() {
-  const [file,setFile]=useState(null),[result,setResult]=useState(null),[message,setMessage]=useState('Re-encodes the image to strip EXIF and other embedded metadata.')
-  async function run(){try{const type=file.type==='image/png'?'image/png':'image/jpeg';setResult(await renderImage(file,type,.94));setMessage('Clean copy created without original metadata.')}catch(e){setMessage(e.message)}}
-  return <div className="tool-body"><FileDrop accept="image/*" label="Drop image to clean" onFiles={(f)=>isImage(f[0])&&(setFile(f[0]),setResult(null))}/>{file&&<OutputPreview file={file} result={result} resultLabel="Clean copy"/>}<Status>{message}</Status><Actions primary="Remove metadata" onPrimary={run} disabled={!file} secondary="Download" onSecondary={()=>result&&downloadBlob(result,`${stem(file.name)}-clean.${file.type==='image/png'?'png':'jpg'}`)} secondaryDisabled={!result}/></div>
+async function readImageMetadata(file) {
+  try {
+    return await exifr.parse(file, {
+      tiff: true,
+      exif: true,
+      gps: true,
+      xmp: true,
+      icc: true,
+      iptc: true,
+      jfif: true,
+      ihdr: true,
+    }) || {}
+  } catch {
+    return {}
+  }
 }
 
-export function ExifViewerTool() {
-  const [file,setFile]=useState(null),[data,setData]=useState(null),[message,setMessage]=useState('Choose a photo to inspect its metadata.')
-  async function run(){try{const out=await exifr.parse(file,{tiff:true,exif:true,gps:true,icc:true,iptc:true,xmp:true});setData(out||{});setMessage(out&&Object.keys(out).length?'Metadata loaded.':'No EXIF metadata found.')}catch(e){setMessage(e.message);setData(null)}}
-  return <div className="tool-body"><FileDrop accept="image/*" label="Drop photo to inspect" onFiles={(f)=>{setFile(f[0]);setData(null)}}/><Status>{message}</Status><Actions primary="Read metadata" onPrimary={run} disabled={!file} secondary="Copy JSON" onSecondary={()=>data&&copyText(JSON.stringify(data,null,2))} secondaryDisabled={!data}/>{data&&<textarea className="code-area" rows="16" readOnly value={JSON.stringify(data,null,2)}/>}</div>
+function metadataValue(value) {
+  if (value == null) return '—'
+  if (value instanceof Date) return value.toLocaleString()
+  if (Array.isArray(value)) return value.map(metadataValue).join(', ')
+  if (typeof value === 'object') {
+    try { return JSON.stringify(value) } catch { return String(value) }
+  }
+  if (typeof value === 'number' && !Number.isInteger(value)) return String(Math.round(value * 1000000) / 1000000)
+  return String(value)
+}
+
+function firstMetadata(data, keys) {
+  for (const key of keys) {
+    if (data?.[key] !== undefined && data?.[key] !== null && data?.[key] !== '') return data[key]
+  }
+  return null
+}
+
+function MetadataRows({ rows }) {
+  const visible = rows.filter((row) => row[1] !== null && row[1] !== undefined && row[1] !== '')
+  if (!visible.length) return <p className="metadata-empty">No values detected in this group.</p>
+  return <div className="metadata-table">{visible.map(([label, value]) => <div className="metadata-row" key={label}><span>{label}</span><strong>{metadataValue(value)}</strong></div>)}</div>
+}
+
+export function MetadataRemoveTool() {
+  const [file,setFile]=useState(null),[result,setResult]=useState(null),[busy,setBusy]=useState(false),[stats,setStats]=useState(null),[message,setMessage]=useState('Re-encodes the image in your browser to remove embedded EXIF, GPS, XMP, IPTC and camera metadata.')
+
+  async function choose(files) {
+    const next=files[0]
+    if(!isImage(next)) { setMessage('Choose a JPG, PNG or WebP image.'); return }
+    setFile(next); setResult(null); setStats(null)
+    const before=await readImageMetadata(next)
+    const count=Object.keys(before).length
+    setMessage(count ? `Detected ${count} metadata field${count===1?'':'s'} before cleaning.` : 'No readable EXIF-style metadata was detected, but you can still create a clean re-encoded copy.')
+  }
+
+  async function run(){
+    try{
+      setBusy(true)
+      const before=await readImageMetadata(file)
+      const type=['image/png','image/jpeg','image/webp'].includes(file.type) ? file.type : 'image/jpeg'
+      const clean=await renderImage(file,type,.95)
+      const after=await readImageMetadata(clean)
+      setResult(clean)
+      setStats({before:Object.keys(before).length,after:Object.keys(after).length})
+      setMessage(Object.keys(after).length===0 ? 'Clean copy verified: no supported EXIF/XMP/IPTC/GPS fields were detected in the output.' : `Clean copy created. ${Object.keys(after).length} container field(s) remain readable by the metadata parser.`)
+    }catch(e){setMessage(e.message)}finally{setBusy(false)}
+  }
+
+  const extension=file ? extFor(['image/png','image/jpeg','image/webp'].includes(file.type)?file.type:'image/jpeg') : 'jpg'
+  return <div className="tool-body">
+    <FileDrop accept="image/png,image/jpeg,image/webp" label="Drop image to remove metadata" onFiles={choose}/>
+    {file&&<OutputPreview file={file} result={result} resultLabel="Metadata-clean copy"/>}
+    {stats&&<div className="metadata-stats"><div><span>Before</span><strong>{stats.before}</strong><small>detected fields</small></div><div><span>After</span><strong>{stats.after}</strong><small>detected fields</small></div><div><span>Processing</span><strong>Local</strong><small>in your browser</small></div></div>}
+    <Status>{message}</Status>
+    <Actions primary="Remove metadata" onPrimary={run} busy={busy} disabled={!file} secondary="Download clean image" onSecondary={()=>result&&downloadBlob(result,`${stem(file.name)}-metadata-clean.${extension}`)} secondaryDisabled={!result}/>
+  </div>
+}
+
+export function MetadataCheckerTool() {
+  const [file,setFile]=useState(null),[data,setData]=useState(null),[dimensions,setDimensions]=useState(null),[busy,setBusy]=useState(false),[message,setMessage]=useState('Upload a photo to inspect all metadata CodaTools can detect. Nothing is uploaded to our server.')
+
+  async function choose(files){
+    const next=files[0]
+    if(!next || (!isImage(next) && !isHeic(next))) { setMessage('Choose an image file to inspect.'); return }
+    setFile(next);setData(null);setDimensions(null);setMessage(`${next.name} is ready to inspect.`)
+  }
+
+  async function run(){
+    try{
+      setBusy(true)
+      const out=await readImageMetadata(file)
+      let dims=null
+      try {
+        if (!isHeic(file)) {
+          const img=await loadImage(file)
+          dims={width:img.naturalWidth,height:img.naturalHeight}
+        }
+      } catch {}
+      setData(out)
+      setDimensions(dims)
+      const count=Object.keys(out).length
+      const hasGps=firstMetadata(out,['latitude','GPSLatitude'])!==null || firstMetadata(out,['longitude','GPSLongitude'])!==null
+      setMessage(count ? `Found ${count} metadata field${count===1?'':'s'}${hasGps?' including location data':''}.` : 'No embedded metadata was detected. File information is still shown below.')
+    }catch(e){setMessage(`Could not inspect metadata: ${e.message}`);setData({})}finally{setBusy(false)}
+  }
+
+  const entries=data ? Object.entries(data).filter(([,value])=>value!==undefined&&value!==null&&typeof value!=='function').sort(([a],[b])=>a.localeCompare(b)) : []
+  const latitude=data&&firstMetadata(data,['latitude','GPSLatitude'])
+  const longitude=data&&firstMetadata(data,['longitude','GPSLongitude'])
+  const captureRows=data ? [
+    ['Date taken',firstMetadata(data,['DateTimeOriginal','CreateDate','DateTimeDigitized','ModifyDate'])],
+    ['Exposure time',firstMetadata(data,['ExposureTime'])],
+    ['Aperture',firstMetadata(data,['FNumber','ApertureValue'])],
+    ['ISO',firstMetadata(data,['ISO','ISOSpeedRatings','PhotographicSensitivity'])],
+    ['Focal length',firstMetadata(data,['FocalLength','FocalLengthIn35mmFormat'])],
+    ['Flash',firstMetadata(data,['Flash'])],
+    ['White balance',firstMetadata(data,['WhiteBalance'])],
+    ['Exposure program',firstMetadata(data,['ExposureProgram'])],
+  ] : []
+  const cameraRows=data ? [
+    ['Camera make',firstMetadata(data,['Make'])],
+    ['Camera model',firstMetadata(data,['Model'])],
+    ['Lens',firstMetadata(data,['LensModel','Lens','LensInfo'])],
+    ['Software',firstMetadata(data,['Software','CreatorTool'])],
+    ['Artist',firstMetadata(data,['Artist','Creator'])],
+    ['Copyright',firstMetadata(data,['Copyright','Rights'])],
+  ] : []
+  const imageRows=data ? [
+    ['Orientation',firstMetadata(data,['Orientation'])],
+    ['Color space',firstMetadata(data,['ColorSpace','ICCProfileName'])],
+    ['X resolution',firstMetadata(data,['XResolution'])],
+    ['Y resolution',firstMetadata(data,['YResolution'])],
+    ['Compression',firstMetadata(data,['Compression'])],
+    ['Bit depth',firstMetadata(data,['BitsPerSample','BitDepth'])],
+  ] : []
+
+  return <div className="tool-body">
+    <FileDrop accept="image/*,.heic,.heif" label="Drop image to check metadata" onFiles={choose}/>
+    <Status>{message}</Status>
+    <Actions primary="Check metadata" onPrimary={run} busy={busy} disabled={!file} secondary="Copy all as JSON" onSecondary={()=>data&&copyText(JSON.stringify(data,null,2))} secondaryDisabled={!data}/>
+    {file&&data&&<div className="metadata-report">
+      <section className="metadata-overview">
+        <div><span>File</span><strong>{file.name}</strong><small>{file.type||'Unknown type'} · {formatBytes(file.size)}</small></div>
+        <div><span>Dimensions</span><strong>{dimensions?`${dimensions.width} × ${dimensions.height}`:'Not available'}</strong><small>{dimensions?`${(dimensions.width*dimensions.height/1_000_000).toFixed(2)} MP`:'Image dimensions not decoded'}</small></div>
+        <div><span>Metadata fields</span><strong>{entries.length}</strong><small>detected by parser</small></div>
+        <div className={latitude!==null&&longitude!==null?'has-location':''}><span>GPS</span><strong>{latitude!==null&&longitude!==null?'Detected':'Not detected'}</strong><small>{latitude!==null&&longitude!==null?`${metadataValue(latitude)}, ${metadataValue(longitude)}`:'No coordinates found'}</small></div>
+      </section>
+
+      <div className="metadata-groups">
+        <section className="metadata-group"><h3>Camera & creator</h3><MetadataRows rows={cameraRows}/></section>
+        <section className="metadata-group"><h3>Capture details</h3><MetadataRows rows={captureRows}/></section>
+        <section className="metadata-group"><h3>Image properties</h3><MetadataRows rows={imageRows}/></section>
+        <section className="metadata-group"><h3>Location</h3><MetadataRows rows={[
+          ['Latitude',latitude],
+          ['Longitude',longitude],
+          ['Altitude',firstMetadata(data,['GPSAltitude','altitude'])],
+          ['GPS date',firstMetadata(data,['GPSDateStamp','GPSDateTime'])],
+          ['Direction',firstMetadata(data,['GPSImgDirection'])],
+        ]}/></section>
+      </div>
+
+      <details className="metadata-raw" open>
+        <summary>All detected metadata ({entries.length})</summary>
+        {entries.length ? <div className="metadata-table metadata-all">{entries.map(([key,value])=><div className="metadata-row" key={key}><span>{key}</span><strong>{metadataValue(value)}</strong></div>)}</div> : <p className="metadata-empty">No embedded EXIF, GPS, XMP, IPTC or ICC metadata was detected.</p>}
+      </details>
+
+      <details className="metadata-raw">
+        <summary>Raw JSON</summary>
+        <textarea className="code-area" rows="16" readOnly value={JSON.stringify(data,null,2)}/>
+      </details>
+    </div>}
+  </div>
 }
 
 export function HeicToJpgTool() {
