@@ -116,11 +116,41 @@ body.modal-open { overflow: hidden; }
 .category-clay strong { font-size: 14px; }
 .category-clay small { color: var(--muted); }
 
-.category-image .tool-mark, .category-image .tool-hero-icon, .category-image > span { background: var(--image); color: var(--image-ink); }
-.category-pdf .tool-mark, .category-pdf .tool-hero-icon, .category-pdf > span { background: var(--pdf); color: var(--pdf-ink); }
-.category-qr .tool-mark, .category-qr .tool-hero-icon, .category-qr > span { background: var(--qr); color: var(--qr-ink); }
-.category-text .tool-mark, .category-text .tool-hero-icon, .category-text > span { background: var(--text-cat); color: var(--text-cat-ink); }
-.category-developer .tool-mark, .category-developer .tool-hero-icon, .category-developer > span { background: var(--dev); color: var(--dev-ink); }
+.category-image .tool-mark,
+.category-image .tool-hero-icon,
+.category-clay.category-image > span:first-child {
+  background: var(--image);
+  color: var(--image-ink);
+}
+.category-pdf .tool-mark,
+.category-pdf .tool-hero-icon,
+.category-clay.category-pdf > span:first-child {
+  background: var(--pdf);
+  color: var(--pdf-ink);
+}
+.category-qr .tool-mark,
+.category-qr .tool-hero-icon,
+.category-clay.category-qr > span:first-child {
+  background: var(--qr);
+  color: var(--qr-ink);
+}
+.category-text .tool-mark,
+.category-text .tool-hero-icon,
+.category-clay.category-text > span:first-child {
+  background: var(--text-cat);
+  color: var(--text-cat-ink);
+}
+.category-developer .tool-mark,
+.category-developer .tool-hero-icon,
+.category-clay.category-developer > span:first-child {
+  background: var(--dev);
+  color: var(--dev-ink);
+}
+
+.tool-card-copy,
+.tool-arrow {
+  background: transparent !important;
+}
 
 .tool-browser { padding: 18px 0 88px; }
 .clay-toolbar { position: sticky; top: 92px; z-index: 35; background: color-mix(in srgb,var(--surface) 92%,transparent); border: 1px solid var(--line); border-radius: 22px; padding: 12px; box-shadow: var(--shadow-out); backdrop-filter: blur(16px); }
