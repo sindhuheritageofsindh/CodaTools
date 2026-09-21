@@ -5,12 +5,14 @@ from pathlib import Path
 import zipfile
 
 from fastapi import FastAPI, File, Form, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 import pypdfium2 as pdfium
 from pypdf import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas as reportlab_canvas
+
+from seo_server import TOOLS, render_index, sitemap_xml
 
 from pdf_utils import (
     MAX_RESPONSE,
@@ -323,8 +325,36 @@ def api_info():
     }
 
 
+@app.get("/robots.txt", response_class=Response)
+def robots(request):
+    origin = str(request.base_url).rstrip("/")
+    body = f"User-agent: *\\nAllow: /\\nDisallow: /api/\\nSitemap: {origin}/sitemap.xml\\n"
+    return Response(body, media_type="text/plain; charset=utf-8")
+
+
+@app.get("/sitemap.xml", response_class=Response)
+def sitemap(request):
+    return Response(sitemap_xml(str(request.base_url)), media_type="application/xml; charset=utf-8")
+
+
 if DIST.exists():
-    app.mount("/", StaticFiles(directory=DIST, html=True), name="frontend")
+    assets = DIST / "assets"
+    if assets.exists():
+        app.mount("/assets", StaticFiles(directory=assets), name="assets")
+
+    @app.get("/tools/{slug}", response_class=HTMLResponse)
+    def tool_page(slug: str, request):
+        if slug not in TOOLS:
+            return HTMLResponse("Tool not found", status_code=404)
+        return HTMLResponse(render_index(DIST / "index.html", str(request.base_url), slug))
+
+    @app.get("/", response_class=HTMLResponse)
+    def home_page(request):
+        return HTMLResponse(render_index(DIST / "index.html", str(request.base_url)))
+
+    @app.get("/{path:path}", response_class=HTMLResponse)
+    def spa_fallback(path: str, request):
+        return HTMLResponse(render_index(DIST / "index.html", str(request.base_url)))
 else:
     @app.get("/")
     def root_not_built():
