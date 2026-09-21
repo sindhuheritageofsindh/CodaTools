@@ -5,7 +5,7 @@ import ToolIcon from './components/ToolIcon'
 import Toast from './components/Toast'
 import { findToolFromLocation, navigate, setSeo, toolPath } from './seo'
 import {
-  CompressImageTool, ConvertImageTool, CropImageTool, ExifViewerTool, HeicToJpgTool, ImageToPdfTool,
+  CompressImageTool, ConvertImageTool, CropImageTool, MetadataCheckerTool, HeicToJpgTool, ImageToPdfTool,
   ImageWatermarkTool, MetadataRemoveTool, OCRTool, PassportPhotoTool, RemoveBackgroundTool, ResizeImageTool,
   RotateImageTool, ScreenshotBeautifyTool,
 } from './tools/ImageTools'
@@ -20,7 +20,7 @@ import {
 const components = {
   'remove-bg': RemoveBackgroundTool, 'compress-image': CompressImageTool, 'resize-image': ResizeImageTool,
   'convert-image': ConvertImageTool, 'crop-image': CropImageTool, 'rotate-image': RotateImageTool,
-  'metadata-remove': MetadataRemoveTool, 'exif-viewer': ExifViewerTool, 'heic-jpg': HeicToJpgTool,
+  'metadata-remove': MetadataRemoveTool, 'metadata-checker': MetadataCheckerTool, 'heic-jpg': HeicToJpgTool,
   ocr: OCRTool, 'image-watermark': ImageWatermarkTool, 'passport-photo': PassportPhotoTool,
   'screenshot-beautify': ScreenshotBeautifyTool, 'image-pdf': ImageToPdfTool,
   'merge-pdf': MergePdfTool, 'split-pdf': SplitPdfTool, 'compress-pdf': CompressPdfTool,
@@ -85,7 +85,7 @@ function HomePage({ setToast }) {
   return <main id="top">
     <section className="hero">
       <div className="hero-orb orb-one" /><div className="hero-orb orb-two" />
-      <span className="eyebrow">35 focused utilities · no account</span>
+      <span className="eyebrow">{tools.length} focused utilities · no account</span>
       <h1>Useful tools,<br /><em>without the clutter.</em></h1>
       <p>Professional image, PDF, QR, text and developer utilities in a fast, privacy-conscious workspace built for every screen.</p>
       <div className="hero-actions"><a href="#tools" className="btn btn-primary clay-button">Explore all tools</a><span><ShieldCheck size={16} /> Most tools run locally</span></div>
